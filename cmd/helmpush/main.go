@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"os/user"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -18,6 +19,7 @@ import (
 
 	cm "github.com/chartmuseum/helm-push/pkg/chartmuseum"
 	"github.com/chartmuseum/helm-push/pkg/helm"
+	"github.com/docker/docker/pkg/urlutil"
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -49,6 +51,8 @@ type (
 		keyring            string
 		dependencyUpdate   bool
 		out                io.Writer
+		gitBranch		   string
+		gitChartPath	   string
 	}
 
 	config struct {
@@ -118,6 +122,8 @@ func newPushCmd(args []string) *cobra.Command {
 	f.StringVarP(&p.caFile, "ca-file", "", "", "Verify certificates of HTTPS-enabled servers using this CA bundle [$HELM_REPO_CA_FILE]")
 	f.StringVarP(&p.certFile, "cert-file", "", "", "Identify HTTPS client using this SSL certificate file [$HELM_REPO_CERT_FILE]")
 	f.StringVarP(&p.keyFile, "key-file", "", "", "Identify HTTPS client using this SSL key file [$HELM_REPO_KEY_FILE]")
+	f.StringVarP(&p.gitBranch, "branch", "b", "", "Specify which Git Branch to clone from")
+	f.StringVarP(&p.gitChartPath, "chart-path", "", "/", "Path to Helm Chart in Git repo")
 	f.StringVar(&p.keyring, "keyring", defaultKeyring(), "location of a public keyring")
 	f.BoolVarP(&p.insecureSkipVerify, "insecure", "", false, "Connect to server with an insecure way by skipping certificate verification [$HELM_REPO_INSECURE]")
 	f.BoolVarP(&p.forceUpload, "force", "f", false, "Force upload even if chart version exists")
@@ -209,6 +215,27 @@ func (p *pushCmd) push() error {
 
 	if err != nil {
 		return err
+	}
+
+	// If chartname is a git URL, clone the repo into a tmp directory
+	// and change p.chartname to the tmp directory + chart path
+	if urlutil.IsGitURL(p.chartName) {
+		stagingDir, err := ioutil.TempDir("", "helm-push-git-url-")
+		if err != nil {
+			return err
+		}
+		defer os.RemoveAll(stagingDir)
+		var cmd *exec.Cmd
+		if p.gitBranch != "" {
+			cmd = exec.Command("git", "clone", "-b", p.gitBranch, p.chartName, stagingDir)
+		} else {
+			cmd = exec.Command("git", "clone", p.chartName, stagingDir)
+		}
+		err = cmd.Run()
+		if err != nil {
+			return err
+		}
+		p.chartName = stagingDir + p.gitChartPath
 	}
 
 	if p.dependencyUpdate {
