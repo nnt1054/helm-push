@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/docker/docker v1.4.2-0.20181221150755-2cb26cfe9cbf
 	github.com/ghodss/yaml v1.0.0
 	github.com/spf13/cobra v0.0.5
 	helm.sh/helm/v3 v3.0.1
