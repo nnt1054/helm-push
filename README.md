@@ -1,17 +1,32 @@
 # helm push plugin
 <img align="right" src="https://github.com/helm/chartmuseum/raw/master/logo.png">
 
-[![Codefresh build status]( https://g.codefresh.io/api/badges/pipeline/chartmuseum/chartmuseum%2Fhelm-push%2Fmaster?type=cf-1)]( https://g.codefresh.io/public/accounts/chartmuseum/pipelines/chartmuseum/helm-push/master)
-
 Helm plugin to push chart package to [ChartMuseum](https://github.com/helm/chartmuseum)
+
+This is a fork of ChartMuseum's [helm-push](https://github.com/chartmuseum/helm-push) plugin, with the added feature of being able to call `helm push` on a subdirectory of a git repository.
+
+The purpose of this feature is to allow a more robust way of pushing new helm chart versions to a repository by allowing helm chart changes to be reviewed and merged into a git repository before packaging and uploading as opposed to simply uploading source files from a local directory.
+
+The `--branch/-b` feature also helps enable helm chart testing in a non-production environment.
+
+#### Pushing a Github URL
+```
+$ helm push https://github.com/nnt1054/cicd_test.git chartmuseum --branch development --chart-path /testchart
+Pushing testchart-0.1.2.tgz to mmo...
+Done.
+```
+
+`--branch` or `-b` will specify which branch of the git repository to pull. (passes in value to `git clone -b <branch> <repo-url>)`
+`--chart-path` will specify the path to the chart's directory inside the git repository's base directory.
+
 
 ## Install
 Based on the version in `plugin.yaml`, release binary will be downloaded from GitHub:
 
 ```
-$ helm plugin install https://github.com/chartmuseum/helm-push.git
+$ helm plugin install https://github.com/nnt1054/helm-push.git
 Downloading and installing helm-push v0.8.1 ...
-https://github.com/chartmuseum/helm-push/releases/download/v0.8.1/helm-push_0.8.1_darwin_amd64.tar.gz
+https://github.com/nnt1054/helm-push/releases/download/v0.8.1/helm-push_0.8.1_darwin_amd64.tar.gz
 Installed plugin: push
 ```
 
